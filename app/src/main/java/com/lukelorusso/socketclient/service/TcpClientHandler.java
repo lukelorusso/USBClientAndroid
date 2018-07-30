@@ -44,7 +44,6 @@ public class TcpClientHandler {
 
             @Override
             public void onServiceDisconnected(ComponentName componentName) {
-                mTcpClientService = null;
             }
         };
 
@@ -57,9 +56,20 @@ public class TcpClientHandler {
         );
     }
 
+    public TcpClientHandler reconnect(
+            Context applicationContext,
+            TcpClientService.TcpClientListener listener
+    ) {
+        this.stop(applicationContext);
+        mInstance = new TcpClientHandler();
+        mInstance.start(applicationContext, listener);
+        return mInstance;
+    }
+
     public void stop(Context applicationContext) {
         applicationContext.unbindService(mTcpServiceConnection);
         applicationContext.stopService(mTcpServiceIntent);
+        mInstance = null;
     }
 
     public void send(String message) {

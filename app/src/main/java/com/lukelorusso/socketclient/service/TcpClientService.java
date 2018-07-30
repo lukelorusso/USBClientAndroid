@@ -9,12 +9,15 @@ import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 
 public class TcpClientService extends Service {
 
@@ -46,7 +49,7 @@ public class TcpClientService extends Service {
     }
 
     public class LocalBinder extends Binder {
-        public TcpClientService getServiceInstance(){
+        public TcpClientService getServiceInstance() {
             return TcpClientService.this;
         }
     }
@@ -58,19 +61,23 @@ public class TcpClientService extends Service {
     }
 
     private void run() {
-        mRun = true;
-
         new Thread() {
             @Override
             public void run() {
                 try {
-                    //here you must put your computer's IP address.
-                    InetAddress serverAddr = InetAddress.getByName(TcpClientConfig.SERVER_IP);
 
-                    //create a socket to make the connection with the server
-                    Socket socket = new Socket(serverAddr, TcpClientConfig.SERVER_PORT);
+                    // Creates a socket address from a hostname and a port number
+                    SocketAddress address = new InetSocketAddress(
+                            TcpClientConfig.SERVER_IP,
+                            TcpClientConfig.SERVER_PORT
+                    );
+                    Socket socket = new Socket();
+                    int timeout = TcpClientConfig.TIMOUT_IN_MILLIS;
 
                     try {
+                        socket.connect(address, timeout);
+                        mRun = true;
+
                         //sends the message to the server
                         mBufferOut = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
 
@@ -88,6 +95,23 @@ public class TcpClientService extends Service {
                         }
 
                     } catch (SocketException ignored) {
+
+                    } catch (SocketTimeoutException exception) {
+                        System.out.println("SocketTimeoutException - "
+                                + TcpClientConfig.SERVER_IP + ":"
+                                + TcpClientConfig.SERVER_PORT + " "
+                                + exception.getMessage()
+                        );
+                        run(); // try again
+
+                    } catch (IOException exception) {
+                        System.out.println("IOException - Unable to connect to "
+                                + TcpClientConfig.SERVER_IP + ":"
+                                + TcpClientConfig.SERVER_PORT + " "
+                                + exception.getMessage()
+                        );
+                        run(); // try again
+
                     } catch (Exception e) {
                         Log.e("TCP", "S: Error", e);
 

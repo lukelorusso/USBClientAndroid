@@ -39,16 +39,23 @@ public class MainActivity extends Activity implements TcpClientService.TcpClient
         mMessageList = new ArrayList<>();
         final EditText editText = findViewById(R.id.editText);
         Button send = findViewById(R.id.send_button);
+        Button reconnect = findViewById(R.id.reconnect_button);
 
         //relate the listView from java to the one created in xml
         ListView listView = findViewById(R.id.list);
         mAdapter = new ClientListAdapter(this, mMessageList);
         listView.setAdapter(mAdapter);
 
+        reconnect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                reconnectTcpClient();
+            }
+        });
+
         send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
                 String message = editText.getText().toString();
 
                 //add the text in the mMessageList
@@ -85,6 +92,10 @@ public class MainActivity extends Activity implements TcpClientService.TcpClient
     private void sendViaTcpClient(String message) {
         this.retrieveTcpClientInstance();
         mTcpClientHandler.send(message);
+    }
+
+    private void reconnectTcpClient() {
+        mTcpClientHandler = mTcpClientHandler.reconnect(getApplicationContext(), MainActivity.this);
     }
 
     private void retrieveTcpClientInstance() {

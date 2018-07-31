@@ -10,6 +10,7 @@ import com.lukelorusso.socketclient.service.TcpClientService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static com.lukelorusso.socketclient.service.TcpClientConfig.*;
 import static org.junit.Assert.*;
 
 /**
@@ -41,6 +42,10 @@ public class TcpInstrumentedTest {
         assertEquals("com.lukelorusso.socketclient", getContext().getPackageName());
     }
 
+    /**
+     * Start the connection with the server (if listening).
+     * Failure is no service is running, success otherwise (will not have a connected confirmation).
+     */
     @Test
     public void getTcpConnection() {
         mTcpClientHandler = TcpClientHandler.getInstance(
@@ -48,13 +53,26 @@ public class TcpInstrumentedTest {
                 new TcpClientService.TcpClientListener() {
                     @Override
                     public void onMessageReceived(String message) {}
+
+                    @Override
+                    public void onServiceStarted() {}
                 }
         );
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         assertNotNull(mTcpClientHandler);
+        assertTrue(mTcpClientHandler.isServiceActive());
         mTcpClientHandler.stop(getApplicationContext());
         mTcpClientHandler = null;
     }
 
+    /**
+     * Send a message to the server.
+     * Failure is no service is running, success otherwise (will not have a reception confirmation).
+     */
     @Test
     public void sendMessage() {
         mTcpClientHandler = TcpClientHandler.getInstance(
@@ -62,23 +80,31 @@ public class TcpInstrumentedTest {
                 new TcpClientService.TcpClientListener() {
                     @Override
                     public void onMessageReceived(String message) {}
+
+                    @Override
+                    public void onServiceStarted() {}
                 }
         );
+        boolean isServiceActive = false;
         try {
             Thread.sleep(1000);
-            mTcpClientHandler.send("Testing message sent");
+            isServiceActive = mTcpClientHandler.send("Testing message sent");
             Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
+        } finally {
+            assertNotNull(mTcpClientHandler);
+            assertTrue(isServiceActive);
+            closeConnection();
         }
-        assertNotNull(mTcpClientHandler);
-        closeConnection();
     }
 
+    /**
+     * Wait for "TIMEOUT_IN_MILLIS" to receive a message from the server.
+     * Success if message received, failure otherwise.
+     */
     @Test
     public void receiveMessage() {
-        final int WAIT_FOR_TCP_MESSAGE_IN_MILLIS = 15000;
-
         mHypotheticalMessages = null;
         mTcpClientHandler = TcpClientHandler.getInstance(
                 getApplicationContext(),
@@ -87,13 +113,18 @@ public class TcpInstrumentedTest {
                     public void onMessageReceived(String message) {
                         mHypotheticalMessages = message;
                     }
+
+                    @Override
+                    public void onServiceStarted() {}
                 }
         );
-        try {
-            Thread.sleep(WAIT_FOR_TCP_MESSAGE_IN_MILLIS);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        long startTime = System.currentTimeMillis();
+        long actualTime = startTime;
+        while (actualTime - startTime < TIMEOUT_IN_MILLIS && mHypotheticalMessages == null) {
+            actualTime = System.currentTimeMillis();
         }
+        assertNotNull(mTcpClientHandler);
+        assertTrue(mTcpClientHandler.isServiceActive());
         assertNotNull(mHypotheticalMessages);
         closeConnection();
         mHypotheticalMessages = null;

@@ -72,9 +72,15 @@ public class TcpClientHandler {
         mInstance = null;
     }
 
-    public void send(String message) {
-        if (mTcpClientService != null) {
+    public boolean isServiceActive() {
+        return mTcpClientService != null;
+    }
+
+    public boolean send(String message) {
+        if (isServiceActive()) {
             mTcpClientService.sendMessage(message);
+            return true;
         }
+        return false;
     }
 }

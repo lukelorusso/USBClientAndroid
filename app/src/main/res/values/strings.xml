@@ -1,3 +1,7 @@
 <resources>
-    <string name="app_name">SocketClient</string>
+    <string name="app_name">TCPSocketClient</string>
+    <string name="reconnect">reconnect</string>
+    <string name="send">send</string>
+    <string name="service_started">"The service just STARTED!"</string>
+    <string name="service_not_started">"The service is not active… Try to RECONNECT"</string>
 </resources>

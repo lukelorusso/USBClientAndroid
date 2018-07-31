@@ -23,6 +23,7 @@ public class TcpClientService extends Service {
 
     public interface TcpClientListener {
         void onMessageReceived(String message);
+        void onServiceStarted();
     }
 
     // message to send to the server
@@ -38,6 +39,8 @@ public class TcpClientService extends Service {
     // used to get the service's instance
     private final IBinder mBinder = new LocalBinder();
 
+    private boolean mRememberToNotifyStart = false;
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -46,6 +49,10 @@ public class TcpClientService extends Service {
 
     public void setTcpClientListener(TcpClientListener listener) {
         mListener = listener;
+        if (mListener != null && mRememberToNotifyStart) {
+            mListener.onServiceStarted();
+            mRememberToNotifyStart = false;
+        }
     }
 
     public class LocalBinder extends Binder {
@@ -65,30 +72,37 @@ public class TcpClientService extends Service {
             @Override
             public void run() {
                 try {
-                    // Creates a socket address from a hostname and a port number
+                    // creates a socket address from a hostname and a port number
                     SocketAddress address = new InetSocketAddress(
-                            TcpClientConfig.SERVER_IP,
+                            TcpClientConfig.SERVER_HOST,
                             TcpClientConfig.SERVER_PORT
                     );
                     Socket socket = new Socket();
-                    int timeout = TcpClientConfig.TIMOUT_IN_MILLIS;
+                    int timeout = TcpClientConfig.TIMEOUT_IN_MILLIS;
 
                     try {
                         socket.connect(address, timeout);
                         mRun = true;
 
-                        //sends the message to the server
+                        // sends the message to the server
                         mBufferOut = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
 
-                        //receives the message which the server sends back
+                        // receives the message which the server sends back
                         mBufferIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-                        //in this while the client listens for the messages sent by the server
+                        // notify service started
+                        if (mListener != null) {
+                            mListener.onServiceStarted();
+                        } else {
+                            mRememberToNotifyStart = true;
+                        }
+
+                        // in this while the client listens for the messages sent by the server
                         while (mRun) {
                             mServerMessage = mBufferIn.readLine();
 
                             if (mServerMessage != null && mListener != null) {
-                                //call the method messageReceived from MyActivity class
+                                // notify message received
                                 mListener.onMessageReceived(mServerMessage);
                             }
                         }
@@ -97,7 +111,7 @@ public class TcpClientService extends Service {
 
                     } catch (SocketTimeoutException exception) {
                         System.out.println("SocketTimeoutException - "
-                                + TcpClientConfig.SERVER_IP + ":"
+                                + TcpClientConfig.SERVER_HOST + ":"
                                 + TcpClientConfig.SERVER_PORT + " "
                                 + exception.getMessage()
                         );
@@ -105,7 +119,7 @@ public class TcpClientService extends Service {
 
                     } catch (IOException exception) {
                         System.out.println("IOException - Unable to connect to "
-                                + TcpClientConfig.SERVER_IP + ":"
+                                + TcpClientConfig.SERVER_HOST + ":"
                                 + TcpClientConfig.SERVER_PORT + " "
                                 + exception.getMessage()
                         );

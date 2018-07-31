@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.lukelorusso.socketclient.R;
 import com.lukelorusso.socketclient.adapter.MessageListAdapter;
@@ -22,13 +23,12 @@ public class MainActivity extends Activity implements TcpClientService.TcpClient
 
     @Override
     public void onMessageReceived(final String message) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mMessageList.add("[S] " + message);
-                mAdapter.notifyDataSetChanged();
-            }
-        });
+        addToMessageList("[S] " + message);
+    }
+
+    @Override
+    public void onServiceStarted() {
+        addToMessageList(getString(R.string.service_started));
     }
 
     @Override
@@ -58,14 +58,15 @@ public class MainActivity extends Activity implements TcpClientService.TcpClient
             public void onClick(View view) {
                 String message = editText.getText().toString();
 
-                //add the text in the mMessageList
-                mMessageList.add("[C] " + message);
+                // try to sends the message to the server...
+                if (sendViaTcpClient(message)) {
+                    // add the text in the mMessageList
+                    addToMessageList("[C] " + message);
+                } else {
+                    // notify the problem
+                    addToMessageList(getString(R.string.service_not_started));
+                }
 
-                //sends the message to the server
-                sendViaTcpClient(message);
-
-                //refresh the list
-                mAdapter.notifyDataSetChanged();
                 editText.setText("");
             }
         });
@@ -84,14 +85,24 @@ public class MainActivity extends Activity implements TcpClientService.TcpClient
         this.retrieveTcpClientInstance();
     }
 
+    private void addToMessageList(final String message) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mMessageList.add(message);
+                mAdapter.notifyDataSetChanged();
+            }
+        });
+    }
+
     private void stopTcpClient() {
         this.retrieveTcpClientInstance();
         mTcpClientHandler.stop(getApplicationContext());
     }
 
-    private void sendViaTcpClient(String message) {
+    private boolean sendViaTcpClient(String message) {
         this.retrieveTcpClientInstance();
-        mTcpClientHandler.send(message);
+        return mTcpClientHandler.send(message);
     }
 
     private void reconnectTcpClient() {

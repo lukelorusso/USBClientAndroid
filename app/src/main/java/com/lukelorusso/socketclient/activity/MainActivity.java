@@ -10,14 +10,14 @@ import android.widget.EditText;
 import android.widget.ListView;
 
 import com.lukelorusso.socketclient.R;
-import com.lukelorusso.socketclient.adapter.ClientListAdapter;
+import com.lukelorusso.socketclient.adapter.MessageListAdapter;
 import com.lukelorusso.socketclient.service.TcpClientHandler;
 import com.lukelorusso.socketclient.service.TcpClientService;
 
 public class MainActivity extends Activity implements TcpClientService.TcpClientListener {
 
     private ArrayList<String> mMessageList;
-    private ClientListAdapter mAdapter;
+    private MessageListAdapter mAdapter;
     private TcpClientHandler mTcpClientHandler;
 
     @Override
@@ -43,7 +43,7 @@ public class MainActivity extends Activity implements TcpClientService.TcpClient
 
         //relate the listView from java to the one created in xml
         ListView listView = findViewById(R.id.list);
-        mAdapter = new ClientListAdapter(this, mMessageList);
+        mAdapter = new MessageListAdapter(this, mMessageList);
         listView.setAdapter(mAdapter);
 
         reconnect.setOnClickListener(new View.OnClickListener() {

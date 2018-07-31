@@ -65,7 +65,6 @@ public class TcpClientService extends Service {
             @Override
             public void run() {
                 try {
-
                     // Creates a socket address from a hostname and a port number
                     SocketAddress address = new InetSocketAddress(
                             TcpClientConfig.SERVER_IP,
@@ -102,7 +101,7 @@ public class TcpClientService extends Service {
                                 + TcpClientConfig.SERVER_PORT + " "
                                 + exception.getMessage()
                         );
-                        run(); // try again
+                        TcpClientService.this.run(); // try again
 
                     } catch (IOException exception) {
                         System.out.println("IOException - Unable to connect to "
@@ -110,7 +109,7 @@ public class TcpClientService extends Service {
                                 + TcpClientConfig.SERVER_PORT + " "
                                 + exception.getMessage()
                         );
-                        run(); // try again
+                        TcpClientService.this.run(); // try again
 
                     } catch (Exception e) {
                         Log.e("TCP", "S: Error", e);
@@ -153,13 +152,12 @@ public class TcpClientService extends Service {
      * Close the connection and release the members
      */
     private void stopClient() {
-        mRun = false;
-        mListener = null;
-        mServerMessage = null;
-
         new Thread() {
             @Override
             public void run() {
+                mRun = false;
+                mListener = null;
+                mServerMessage = null;
                 if (mBufferOut != null) {
                     mBufferOut.flush();
                     mBufferOut.close();

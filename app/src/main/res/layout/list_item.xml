@@ -12,8 +12,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/list_item_text_view"
-        android:textSize="20sp"
+        android:textSize="14sp"
+        android:typeface="monospace"
         android:padding="10dp"
-        android:layout_marginLeft="5dp"/>
+        android:layout_marginLeft="5dp"
+        android:layout_marginStart="5dp" />
 
 </LinearLayout>

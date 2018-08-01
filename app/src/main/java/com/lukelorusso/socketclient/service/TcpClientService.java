@@ -19,11 +19,15 @@ import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
+import static com.lukelorusso.socketclient.service.TcpClientConfig.*;
+
 public class TcpClientService extends Service {
 
     public interface TcpClientListener {
         void onMessageReceived(String message);
+        void onExceptionThrown(String message);
         void onServiceStarted();
+        void onServiceStopped();
     }
 
     // message to send to the server
@@ -74,21 +78,31 @@ public class TcpClientService extends Service {
                 try {
                     // creates a socket address from a hostname and a port number
                     SocketAddress address = new InetSocketAddress(
-                            TcpClientConfig.SERVER_HOST,
-                            TcpClientConfig.SERVER_PORT
+                            SERVER_HOST,
+                            SERVER_PORT
                     );
                     Socket socket = new Socket();
-                    int timeout = TcpClientConfig.TIMEOUT_IN_MILLIS;
 
                     try {
-                        socket.connect(address, timeout);
+                        socket.connect(address, TIMEOUT_IN_MILLIS);
                         mRun = true;
 
                         // sends the message to the server
-                        mBufferOut = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
+                        mBufferOut = new PrintWriter(
+                                new BufferedWriter(
+                                        new OutputStreamWriter(
+                                                socket.getOutputStream()
+                                        )
+                                ),
+                                true
+                        );
 
                         // receives the message which the server sends back
-                        mBufferIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                        mBufferIn = new BufferedReader(
+                                new InputStreamReader(
+                                        socket.getInputStream()
+                                )
+                        );
 
                         // notify service started
                         if (mListener != null) {
@@ -107,33 +121,36 @@ public class TcpClientService extends Service {
                             }
                         }
 
-                    } catch (SocketException ignored) {
+                    } catch (SocketException exception) {
+                        onExceptionThrown("SocketException - "
+                                + SERVER_HOST + ":"
+                                + SERVER_PORT + " "
+                                + exception.getMessage()
+                        );
 
                     } catch (SocketTimeoutException exception) {
-                        System.out.println("SocketTimeoutException - "
-                                + TcpClientConfig.SERVER_HOST + ":"
-                                + TcpClientConfig.SERVER_PORT + " "
+                        onExceptionThrown("SocketTimeoutException - "
+                                + SERVER_HOST + ":"
+                                + SERVER_PORT + " "
                                 + exception.getMessage()
                         );
-                        TcpClientService.this.run(); // try again
 
                     } catch (IOException exception) {
-                        System.out.println("IOException - Unable to connect to "
-                                + TcpClientConfig.SERVER_HOST + ":"
-                                + TcpClientConfig.SERVER_PORT + " "
+                        onExceptionThrown("IOException - Unable to connect to "
+                                + SERVER_HOST + ":"
+                                + SERVER_PORT + " "
                                 + exception.getMessage()
                         );
-                        TcpClientService.this.run(); // try again
 
-                    } catch (Exception e) {
-                        Log.e("TCP", "S: Error", e);
+                    } catch (Exception exception) {
+                        onExceptionThrown("ServerError - " + exception.getMessage());
 
                     } finally {
                         stopClient();
                     }
 
-                } catch (Exception e) {
-                    Log.e("TCP", "C: Error", e);
+                } catch (Exception exception) {
+                    onExceptionThrown("ClientError - " + exception.getMessage());
                 }
             }
         }.start();
@@ -170,15 +187,28 @@ public class TcpClientService extends Service {
             @Override
             public void run() {
                 mRun = false;
-                mListener = null;
-                mServerMessage = null;
-                if (mBufferOut != null) {
-                    mBufferOut.flush();
-                    mBufferOut.close();
+                if (mListener != null) {
+                    // notify service stopped
+                    mListener.onServiceStopped();
+                    mListener = null;
                 }
+                mServerMessage = null;
+                try {
+                    if (mBufferOut != null) {
+                        mBufferOut.flush();
+                        mBufferOut.close();
+                    }
+                } catch (NullPointerException ignored) {}
                 mBufferIn = null;
                 mBufferOut = null;
             }
         }.start();
+    }
+
+    private void onExceptionThrown(String message) {
+        Log.e(EXCEPTION_LOG_TAG, message);
+        if (mListener != null) {
+            mListener.onExceptionThrown(message);
+        }
     }
 }

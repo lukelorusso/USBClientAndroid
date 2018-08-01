@@ -8,13 +8,19 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import com.lukelorusso.socketclient.R;
 import com.lukelorusso.socketclient.adapter.MessageListAdapter;
 import com.lukelorusso.socketclient.service.TcpClientHandler;
 import com.lukelorusso.socketclient.service.TcpClientService;
 
+/**
+ * Legend:
+ *     [C] = message from Client
+ *     [S] = message from Server
+ *     [I] = local Info
+ *     [E] = local Exception
+ */
 public class MainActivity extends Activity implements TcpClientService.TcpClientListener {
 
     private ArrayList<String> mMessageList;
@@ -27,8 +33,18 @@ public class MainActivity extends Activity implements TcpClientService.TcpClient
     }
 
     @Override
+    public void onExceptionThrown(String message) {
+        addToMessageList("[E] " + message);
+    }
+
+    @Override
     public void onServiceStarted() {
-        addToMessageList(getString(R.string.service_started));
+        addToMessageList("[I] " + getString(R.string.service_started));
+    }
+
+    @Override
+    public void onServiceStopped() {
+        addToMessageList("[I] " + getString(R.string.service_stopped));
     }
 
     @Override
@@ -38,13 +54,22 @@ public class MainActivity extends Activity implements TcpClientService.TcpClient
 
         mMessageList = new ArrayList<>();
         final EditText editText = findViewById(R.id.editText);
-        Button send = findViewById(R.id.send_button);
+        Button clear = findViewById(R.id.clear_button);
         Button reconnect = findViewById(R.id.reconnect_button);
+        Button send = findViewById(R.id.send_button);
 
         //relate the listView from java to the one created in xml
         ListView listView = findViewById(R.id.list);
         mAdapter = new MessageListAdapter(this, mMessageList);
         listView.setAdapter(mAdapter);
+
+        clear.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mMessageList.clear();
+                mAdapter.notifyDataSetChanged();
+            }
+        });
 
         reconnect.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -64,7 +89,7 @@ public class MainActivity extends Activity implements TcpClientService.TcpClient
                     addToMessageList("[C] " + message);
                 } else {
                     // notify the problem
-                    addToMessageList(getString(R.string.service_not_started));
+                    addToMessageList("[I] " + getString(R.string.service_not_started));
                 }
 
                 editText.setText("");

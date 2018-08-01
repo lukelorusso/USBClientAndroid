@@ -17,7 +17,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="end">
+        android:gravity="bottom">
+
+        <!-- clear button -->
+        <Button android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/clear_button"
+            android:layout_gravity="center_vertical"
+            android:text="@string/clear" />
+
+        <Space android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1"/>
 
         <!-- reconnect button -->
         <Button android:layout_width="wrap_content"
@@ -34,6 +45,7 @@
         android:orientation="horizontal"
         android:gravity="bottom">
 
+        <!-- input field -->
         <EditText android:inputType="textMultiLine|textNoSuggestions"
             android:layout_width="0dp"
             android:layout_height="40dp"

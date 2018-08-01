@@ -55,7 +55,13 @@ public class TcpInstrumentedTest {
                     public void onMessageReceived(String message) {}
 
                     @Override
+                    public void onExceptionThrown(String message) {}
+
+                    @Override
                     public void onServiceStarted() {}
+
+                    @Override
+                    public void onServiceStopped() {}
                 }
         );
         try {
@@ -82,7 +88,13 @@ public class TcpInstrumentedTest {
                     public void onMessageReceived(String message) {}
 
                     @Override
+                    public void onExceptionThrown(String message) {}
+
+                    @Override
                     public void onServiceStarted() {}
+
+                    @Override
+                    public void onServiceStopped() {}
                 }
         );
         boolean isServiceActive = false;
@@ -115,7 +127,13 @@ public class TcpInstrumentedTest {
                     }
 
                     @Override
+                    public void onExceptionThrown(String message) {}
+
+                    @Override
                     public void onServiceStarted() {}
+
+                    @Override
+                    public void onServiceStopped() {}
                 }
         );
         long startTime = System.currentTimeMillis();
@@ -127,7 +145,6 @@ public class TcpInstrumentedTest {
         assertTrue(mTcpClientHandler.isServiceActive());
         assertNotNull(mHypotheticalMessages);
         closeConnection();
-        mHypotheticalMessages = null;
     }
 
 }

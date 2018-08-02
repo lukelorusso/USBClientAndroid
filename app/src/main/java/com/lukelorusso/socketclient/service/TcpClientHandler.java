@@ -29,8 +29,13 @@ public class TcpClientHandler {
             return mInstance;
 
         } else {
+            mInstance.updateListener(listener);
             return mInstance;
         }
+    }
+
+    private void updateListener(TcpClientService.TcpClientListener listener) {
+        mTcpClientService.setTcpClientListener(listener);
     }
 
     private void start(Context context, final TcpClientService.TcpClientListener listener) {
